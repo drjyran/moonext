@@ -2,16 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, ChartBar, ClipboardList, FileDown, HardHat, Home, IndianRupee, Users } from "lucide-react";
+import {
+  BrainCircuit,
+  Building2,
+  ChartBar,
+  ClipboardList,
+  FileDown,
+  HardHat,
+  Home,
+  IndianRupee,
+  Package,
+  Users
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/dashboard/sites", label: "Sites", icon: Building2 },
-  { href: "/dashboard/labours", label: "Labours", icon: HardHat },
+  { href: "/dashboard/workers", label: "Workers", icon: HardHat },
   { href: "/dashboard/attendance", label: "Attendance", icon: ClipboardList },
   { href: "/dashboard/contractors", label: "Contractors", icon: Users },
-  { href: "/dashboard/wages", label: "Wages", icon: IndianRupee },
+  { href: "/dashboard/payroll", label: "Payroll", icon: IndianRupee },
+  { href: "/dashboard/materials", label: "Materials", icon: Package },
+  { href: "/dashboard/ai", label: "AI Insights", icon: BrainCircuit },
   { href: "/dashboard/reports", label: "Reports", icon: FileDown },
   { href: "/dashboard/users", label: "Users", icon: ChartBar }
 ];

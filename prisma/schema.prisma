@@ -11,6 +11,9 @@ enum Role {
   ADMIN
   SITE_MANAGER
   CONTRACTOR
+  PROJECT_MANAGER
+  SITE_SUPERVISOR
+  ACCOUNTANT
 }
 
 enum LabourStatus {
@@ -37,6 +40,21 @@ enum PaymentStatus {
   PAID
 }
 
+enum SiteStatus {
+  PLANNED
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+}
+
+enum ReportType {
+  SITE_LABOUR
+  ATTENDANCE
+  WORKER_PAYMENT
+  CONTRACTOR_PAYMENT
+  MATERIAL_USAGE
+}
+
 model User {
   id           String      @id @default(cuid())
   fullName     String
@@ -57,14 +75,19 @@ model Site {
   name          String
   state         String
   city          String
+  location      String?
+  projectManager String?
   projectStart  DateTime
   projectEnd    DateTime
   isActive      Boolean      @default(true)
+  status        SiteStatus    @default(ACTIVE)
   siteManagerId String?
   siteManagers  User[]
   labours       Labour[]
   attendances   Attendance[]
   wageRecords   WageRecord[]
+  materials     Material[]
+  payments      Payment[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -72,18 +95,21 @@ model Site {
 model Contractor {
   id          String       @id @default(cuid())
   name        String
+  companyName String?
   phone       String       @unique
   email       String?      @unique
   address     String?
   users       User[]
   labours     Labour[]
   wageRecords WageRecord[]
+  payments    Payment[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
 
 model Labour {
   id             String       @id @default(cuid())
+  workerCode     String?      @unique
   fullName       String
   phone          String       @unique
   aadhaarNumber  String       @unique
@@ -92,6 +118,8 @@ model Labour {
   halfDayWage    Decimal?     @db.Decimal(10, 2)
   overtimeWage   Decimal?     @db.Decimal(10, 2)
   status         LabourStatus @default(ACTIVE)
+  address        String?
+  emergencyContact String?
   assignedSiteId String
   contractorId   String
   aadhaarDocUrl  String?
@@ -100,6 +128,7 @@ model Labour {
   contractor     Contractor   @relation(fields: [contractorId], references: [id])
   attendances    Attendance[]
   wageRecords    WageRecord[]
+  payments       Payment[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 }
@@ -147,4 +176,50 @@ model WageRecord {
 
   @@unique([labourId, month, year])
   @@index([siteId, month, year])
+}
+
+model Material {
+  id           String   @id @default(cuid())
+  name         String
+  quantity     Decimal  @db.Decimal(12, 2)
+  unit         String
+  siteId       String
+  supplier     String?
+  purchaseDate DateTime
+  consumedQty  Decimal  @default(0) @db.Decimal(12, 2)
+  createdById  String?
+  site         Site     @relation(fields: [siteId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([siteId, purchaseDate])
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  labourId      String?
+  contractorId  String?
+  siteId        String?
+  amount        Decimal       @db.Decimal(12, 2)
+  paidAt        DateTime      @default(now())
+  status        PaymentStatus @default(PAID)
+  notes         String?
+  labour        Labour?       @relation(fields: [labourId], references: [id])
+  contractor    Contractor?   @relation(fields: [contractorId], references: [id])
+  site          Site?         @relation(fields: [siteId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([paidAt])
+  @@index([siteId])
+}
+
+model Report {
+  id          String     @id @default(cuid())
+  type        ReportType
+  title       String
+  filterJson  Json?
+  fileUrl     String?
+  generatedBy String
+  generatedAt DateTime   @default(now())
 }

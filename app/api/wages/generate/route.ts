@@ -10,6 +10,9 @@ const schema = z.object({
   siteId: z.string().optional(),
   contractorId: z.string().optional()
 });
+function isSiteScopedRole(role: Role) {
+  return role === Role.SITE_MANAGER || role === Role.PROJECT_MANAGER || role === Role.SITE_SUPERVISOR;
+}
 
 export async function GET(request: NextRequest) {
   const result = await requireUser(request);
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
     where: {
       month,
       year,
-      ...(result.user.role === Role.SITE_MANAGER ? { siteId: result.user.siteId ?? "" } : {}),
+      ...(isSiteScopedRole(result.user.role) ? { siteId: result.user.siteId ?? "" } : {}),
       ...(result.user.role === Role.CONTRACTOR ? { contractorId: result.user.contractorId ?? "" } : {})
     },
     include: {
@@ -37,7 +40,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireRole(request, [Role.ADMIN, Role.SITE_MANAGER]);
+  const auth = await requireRole(request, [Role.ADMIN, Role.SITE_MANAGER, Role.PROJECT_MANAGER, Role.SITE_SUPERVISOR, Role.ACCOUNTANT]);
   if ("error" in auth) return auth.error;
 
   const body = await request.json();
@@ -49,7 +52,7 @@ export async function POST(request: NextRequest) {
   const labourWhere = {
     ...(parsed.data.siteId ? { assignedSiteId: parsed.data.siteId } : {}),
     ...(parsed.data.contractorId ? { contractorId: parsed.data.contractorId } : {}),
-    ...(auth.user.role === Role.SITE_MANAGER ? { assignedSiteId: auth.user.siteId ?? "" } : {})
+    ...(isSiteScopedRole(auth.user.role) ? { assignedSiteId: auth.user.siteId ?? "" } : {})
   };
 
   const labours = await prisma.labour.findMany({ where: labourWhere });

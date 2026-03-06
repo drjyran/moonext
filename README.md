@@ -19,6 +19,9 @@ Full-stack Labour Management System for **Moonext Constructions Pvt Ltd**.
 - Reports filters
 - Seed data
 - Optional placeholders: OTP, uploads, SMS integration
+- Material management
+- Payment tracking
+- AI labour forecasting insights
 
 ## Quick Start
 1. Install dependencies:
@@ -31,7 +34,7 @@ Full-stack Labour Management System for **Moonext Constructions Pvt Ltd**.
    ```
 3. Run Prisma migrations + generate:
    ```bash
-   npx prisma migrate dev --name init
+   npx prisma migrate dev
    npx prisma generate
    ```
 4. Seed sample data:
@@ -54,6 +57,11 @@ Full-stack Labour Management System for **Moonext Constructions Pvt Ltd**.
 3. Set `DATABASE_URL` and `JWT_SECRET` environment variables.
 4. Run build command: `npm run build`.
 5. Add post-deploy migration step via CI or manual `prisma migrate deploy`.
+
+### Production DB migration
+```bash
+npx prisma migrate deploy
+```
 
 ## Project Structure
 - `app/(auth)/login`: login UI

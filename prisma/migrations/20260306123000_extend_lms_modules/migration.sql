@@ -1,0 +1,92 @@
+DO $$ BEGIN
+  ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'PROJECT_MANAGER';
+  ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'SITE_SUPERVISOR';
+  ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'ACCOUNTANT';
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "SiteStatus" AS ENUM ('PLANNED', 'ACTIVE', 'ON_HOLD', 'COMPLETED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  CREATE TYPE "ReportType" AS ENUM ('SITE_LABOUR', 'ATTENDANCE', 'WORKER_PAYMENT', 'CONTRACTOR_PAYMENT', 'MATERIAL_USAGE');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+ALTER TABLE "Site" ADD COLUMN IF NOT EXISTS "location" TEXT;
+ALTER TABLE "Site" ADD COLUMN IF NOT EXISTS "projectManager" TEXT;
+ALTER TABLE "Site" ADD COLUMN IF NOT EXISTS "status" "SiteStatus" NOT NULL DEFAULT 'ACTIVE';
+
+ALTER TABLE "Contractor" ADD COLUMN IF NOT EXISTS "companyName" TEXT;
+
+ALTER TABLE "Labour" ADD COLUMN IF NOT EXISTS "workerCode" TEXT;
+ALTER TABLE "Labour" ADD COLUMN IF NOT EXISTS "address" TEXT;
+ALTER TABLE "Labour" ADD COLUMN IF NOT EXISTS "emergencyContact" TEXT;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "Labour_workerCode_key" ON "Labour"("workerCode");
+
+CREATE TABLE IF NOT EXISTS "Material" (
+  "id" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "quantity" DECIMAL(12,2) NOT NULL,
+  "unit" TEXT NOT NULL,
+  "siteId" TEXT NOT NULL,
+  "supplier" TEXT,
+  "purchaseDate" TIMESTAMP(3) NOT NULL,
+  "consumedQty" DECIMAL(12,2) NOT NULL DEFAULT 0,
+  "createdById" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "Material_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "Payment" (
+  "id" TEXT NOT NULL,
+  "labourId" TEXT,
+  "contractorId" TEXT,
+  "siteId" TEXT,
+  "amount" DECIMAL(12,2) NOT NULL,
+  "paidAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "status" "PaymentStatus" NOT NULL DEFAULT 'PAID',
+  "notes" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
+);
+
+CREATE TABLE IF NOT EXISTS "Report" (
+  "id" TEXT NOT NULL,
+  "type" "ReportType" NOT NULL,
+  "title" TEXT NOT NULL,
+  "filterJson" JSONB,
+  "fileUrl" TEXT,
+  "generatedBy" TEXT NOT NULL,
+  "generatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "Report_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX IF NOT EXISTS "Material_siteId_purchaseDate_idx" ON "Material"("siteId", "purchaseDate");
+CREATE INDEX IF NOT EXISTS "Payment_paidAt_idx" ON "Payment"("paidAt");
+CREATE INDEX IF NOT EXISTS "Payment_siteId_idx" ON "Payment"("siteId");
+
+DO $$ BEGIN
+  ALTER TABLE "Material" ADD CONSTRAINT "Material_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "Site"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Payment" ADD CONSTRAINT "Payment_labourId_fkey" FOREIGN KEY ("labourId") REFERENCES "Labour"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Payment" ADD CONSTRAINT "Payment_contractorId_fkey" FOREIGN KEY ("contractorId") REFERENCES "Contractor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "Payment" ADD CONSTRAINT "Payment_siteId_fkey" FOREIGN KEY ("siteId") REFERENCES "Site"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

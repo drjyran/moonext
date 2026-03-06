@@ -12,12 +12,15 @@ const createSchema = z.object({
   projectStart: z.string(),
   projectEnd: z.string()
 });
+function isSiteScopedRole(role: Role) {
+  return role === Role.SITE_MANAGER || role === Role.PROJECT_MANAGER || role === Role.SITE_SUPERVISOR;
+}
 
 export async function GET(request: NextRequest) {
   const result = await requireUser(request);
   if ("error" in result) return result.error;
 
-  const where = result.user.role === Role.SITE_MANAGER ? { id: result.user.siteId ?? "" } : {};
+  const where = isSiteScopedRole(result.user.role) ? { id: result.user.siteId ?? "" } : {};
   const sites = await prisma.site.findMany({
     where,
     include: { siteManagers: { select: { id: true, fullName: true, email: true } } },

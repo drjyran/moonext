@@ -16,6 +16,9 @@ const bulkSchema = z.object({
     })
   )
 });
+function isSiteScopedRole(role: Role) {
+  return role === Role.SITE_MANAGER || role === Role.PROJECT_MANAGER || role === Role.SITE_SUPERVISOR;
+}
 
 export async function GET(request: NextRequest) {
   const result = await requireUser(request);
@@ -27,7 +30,7 @@ export async function GET(request: NextRequest) {
   const where: Record<string, unknown> = {
     ...(date ? { date: new Date(date) } : {}),
     ...(siteId ? { siteId } : {}),
-    ...(result.user.role === Role.SITE_MANAGER ? { siteId: result.user.siteId ?? "" } : {}),
+    ...(isSiteScopedRole(result.user.role) ? { siteId: result.user.siteId ?? "" } : {}),
     ...(result.user.role === Role.CONTRACTOR
       ? { labour: { contractorId: result.user.contractorId ?? "" } }
       : {})
@@ -46,14 +49,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireRole(request, [Role.ADMIN, Role.SITE_MANAGER]);
+  const auth = await requireRole(request, [Role.ADMIN, Role.SITE_MANAGER, Role.PROJECT_MANAGER, Role.SITE_SUPERVISOR]);
   if ("error" in auth) return auth.error;
 
   const body = await request.json();
   const parsed = bulkSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  if (auth.user.role === Role.SITE_MANAGER && auth.user.siteId !== parsed.data.siteId) {
+  if (isSiteScopedRole(auth.user.role) && auth.user.siteId !== parsed.data.siteId) {
     return NextResponse.json({ error: "Cannot mark attendance for another site" }, { status: 403 });
   }
 

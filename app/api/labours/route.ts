@@ -16,6 +16,9 @@ const createSchema = z.object({
   aadhaarDocUrl: z.string().optional(),
   photoUrl: z.string().optional()
 });
+function isSiteScopedRole(role: Role) {
+  return role === Role.SITE_MANAGER || role === Role.PROJECT_MANAGER || role === Role.SITE_SUPERVISOR;
+}
 
 export async function GET(request: NextRequest) {
   const result = await requireUser(request);
@@ -26,7 +29,7 @@ export async function GET(request: NextRequest) {
     where:
       user.role === Role.ADMIN
         ? {}
-        : user.role === Role.SITE_MANAGER
+        : isSiteScopedRole(user.role)
           ? { assignedSiteId: user.siteId ?? "" }
           : { contractorId: user.contractorId ?? "" },
     include: {
@@ -40,14 +43,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const auth = await requireRole(request, [Role.ADMIN, Role.SITE_MANAGER]);
+  const auth = await requireRole(request, [Role.ADMIN, Role.SITE_MANAGER, Role.PROJECT_MANAGER, Role.SITE_SUPERVISOR]);
   if ("error" in auth) return auth.error;
 
   const body = await request.json();
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
-  if (auth.user.role === Role.SITE_MANAGER && auth.user.siteId !== parsed.data.assignedSiteId) {
+  if (isSiteScopedRole(auth.user.role) && auth.user.siteId !== parsed.data.assignedSiteId) {
     return NextResponse.json({ error: "Cannot assign outside your site" }, { status: 403 });
   }
 
