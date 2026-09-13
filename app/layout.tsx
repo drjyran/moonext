@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { SiteShell } from "@/components/public/site-shell";
 import { getCurrentUserFromCookie } from "@/lib/auth";
@@ -56,6 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           {children}
         </SiteShell>
+        <SpeedInsights />
       </body>
     </html>
   );
