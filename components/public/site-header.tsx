@@ -33,12 +33,12 @@ export function SiteHeader({ companyInfo, user, isInternalRoute }: Props) {
   }));
 
   return (
-    <header className="site-shell-header sticky top-0 z-40 border-b border-white/50 bg-[rgba(248,245,239,0.82)] shadow-[0_18px_55px_rgba(15,23,42,0.08)] backdrop-blur-2xl">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-orange-300 to-transparent" />
+    <header className="site-shell-header sticky top-0 z-40 border-b border-white/50 bg-[rgba(255,251,245,0.86)] shadow-[0_18px_55px_rgba(15,23,42,0.10)] backdrop-blur-2xl">
+      <div className="absolute inset-x-0 top-0 h-[3px] animate-gradient-pan bg-[linear-gradient(90deg,#fb7185,#f59e0b,#10b981,#0ea5e9,#8b5cf6,#fb7185)] bg-[length:220%_100%]" />
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3 md:px-6">
         <Link href="/" className="min-w-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-[18px] border border-white/60 bg-[linear-gradient(135deg,#0f172a_0%,#1f3d70_100%)] text-sm font-black tracking-[0.2em] text-white shadow-[0_14px_35px_rgba(15,23,42,0.24)]">
+            <div className="flex h-11 w-11 animate-float-fast items-center justify-center rounded-[18px] border border-white/60 bg-[linear-gradient(135deg,#fb7185_0%,#f59e0b_48%,#10b981_100%)] text-sm font-black tracking-[0.2em] text-white shadow-[0_14px_35px_rgba(251,113,133,0.34)]">
               M
             </div>
             <div className="min-w-0">
@@ -48,16 +48,16 @@ export function SiteHeader({ companyInfo, user, isInternalRoute }: Props) {
           </div>
         </Link>
 
-        <nav className="hidden items-center gap-1 rounded-full border border-slate-200/80 bg-white/80 p-1.5 shadow-[0_16px_40px_rgba(15,23,42,0.08)] lg:flex">
+        <nav className="hidden items-center gap-1 rounded-full border border-white/70 bg-white/85 p-1.5 shadow-[0_16px_40px_rgba(15,23,42,0.10)] backdrop-blur-xl lg:flex">
           {coreLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition",
+                "lively-button rounded-full px-4 py-2 text-sm font-medium transition",
                 item.active
-                  ? "bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.22)]"
-                  : "text-slate-600 hover:bg-slate-100/90 hover:text-slate-900"
+                  ? "bg-[linear-gradient(135deg,#0f172a_0%,#7c3aed_55%,#db2777_100%)] text-white shadow-[0_10px_24px_rgba(124,58,237,0.34)]"
+                  : "text-slate-600 hover:bg-gradient-to-r hover:from-rose-50 hover:via-amber-50 hover:to-emerald-50 hover:text-slate-900"
               )}
             >
               {item.label}
@@ -88,7 +88,7 @@ export function SiteHeader({ companyInfo, user, isInternalRoute }: Props) {
           ) : (
             <Link
               href="/staff-access"
-              className="inline-flex min-h-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fb923c_0%,#f97316_100%)] px-5 text-sm font-semibold text-white shadow-[0_14px_35px_rgba(249,115,22,0.28)] transition hover:brightness-105"
+              className="lively-button inline-flex min-h-10 items-center justify-center rounded-full bg-[linear-gradient(135deg,#fb7185_0%,#f97316_45%,#8b5cf6_100%)] px-5 text-sm font-semibold text-white shadow-[0_14px_35px_rgba(219,39,119,0.30)]"
             >
               Staff Login
             </Link>

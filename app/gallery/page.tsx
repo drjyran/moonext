@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Camera, HardHat, ImageIcon, ShieldCheck } from "lucide-react";
+import { FloatingOrbs } from "@/components/public/floating-orbs";
+import { Reveal } from "@/components/public/reveal";
 import { SectionHeading } from "@/components/public/section-heading";
 import { getPublicWebsiteContent } from "@/lib/website-content-store";
 
