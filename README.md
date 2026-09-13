@@ -32,16 +32,17 @@ Full-stack Labour Management System for **Moonext Constructions Pvt Ltd**.
    ```bash
    cp .env.example .env
    ```
-3. Run Prisma migrations + generate:
+3. Make sure PostgreSQL is running and the database referenced by `DATABASE_URL` already exists.
+4. Run Prisma migrations + generate:
    ```bash
    npx prisma migrate dev
    npx prisma generate
    ```
-4. Seed sample data:
+5. Seed sample data:
    ```bash
    npm run prisma:seed
    ```
-5. Start app:
+6. Start app:
    ```bash
    npm run dev
    ```
@@ -58,6 +59,25 @@ Full-stack Labour Management System for **Moonext Constructions Pvt Ltd**.
 4. Run build command: `npm run build`.
 5. Add post-deploy migration step via CI or manual `prisma migrate deploy`.
 
+## Gmail Backup For Labour Updates
+If you want labour create, update, and delete actions emailed to Gmail as backup:
+
+1. Enable 2-Step Verification on the Gmail account.
+2. Create a Gmail App Password.
+3. Set these environment variables:
+   ```bash
+   LABOUR_BACKUP_GMAIL_USER=your-backup-gmail@gmail.com
+   LABOUR_BACKUP_GMAIL_APP_PASSWORD=your-16-char-gmail-app-password
+   LABOUR_BACKUP_EMAIL_TO=your-backup-gmail@gmail.com
+   LABOUR_BACKUP_FROM_NAME="Moonext Labour Backup"
+   ```
+4. Restart the app or redeploy on Vercel.
+
+Notes:
+- Labour create, update, and delete APIs remain the primary workflow.
+- Backup email failures are logged but do not block labour changes.
+- Aadhaar is masked in the backup email for safer handling.
+
 ### Production DB migration
 ```bash
 npx prisma migrate deploy
@@ -70,3 +90,4 @@ npx prisma migrate deploy
 - `lib/*`: auth, prisma, API guards, utils
 - `prisma/schema.prisma`: database models
 - `prisma/seed.ts`: sample seed data
+# moonext
