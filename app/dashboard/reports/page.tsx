@@ -30,30 +30,48 @@ export default function ReportsPage() {
       setSites(await s.json());
       setContractors(await c.json());
     });
-  }, []);
+  }, [pushToast]);
 
-  const reportUrl = useMemo(
+  const csvUrl = useMemo(
     () => `/api/reports/payroll.csv?month=${month}&year=${year}${siteId ? `&siteId=${siteId}` : ""}${contractorId ? `&contractorId=${contractorId}` : ""}`,
     [month, year, siteId, contractorId]
   );
 
-  function downloadReport() {
+  const letterheadUrl = useMemo(
+    () => `/reports/payroll?month=${month}&year=${year}${siteId ? `&siteId=${siteId}` : ""}${contractorId ? `&contractorId=${contractorId}` : ""}&print=1`,
+    [month, year, siteId, contractorId]
+  );
+
+  function validateFilters() {
     const monthNumber = Number(month);
     const yearNumber = Number(year);
     if (!Number.isInteger(monthNumber) || monthNumber < 1 || monthNumber > 12) {
-      return pushToast("Month must be between 1 and 12", "error");
+      pushToast("Month must be between 1 and 12", "error");
+      return false;
     }
     if (!Number.isInteger(yearNumber) || yearNumber < 2020 || yearNumber > 2100) {
-      return pushToast("Year must be between 2020 and 2100", "error");
+      pushToast("Year must be between 2020 and 2100", "error");
+      return false;
     }
+    return true;
+  }
+
+  function openLetterheadReport() {
+    if (!validateFilters()) return;
+    pushToast("Opening letterhead report");
+    window.open(letterheadUrl, "_blank", "noopener,noreferrer");
+  }
+
+  function downloadReport() {
+    if (!validateFilters()) return;
     pushToast("Generating CSV report");
-    window.location.href = reportUrl;
+    window.location.href = csvUrl;
   }
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Reports</h2>
-      <div className="grid gap-2 rounded-xl border bg-white p-4 md:grid-cols-5">
+      <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-6">
         <Input type="number" min={1} max={12} value={month} onChange={(e) => setMonth(e.target.value)} />
         <Input type="number" min={2020} max={2100} value={year} onChange={(e) => setYear(e.target.value)} />
         <Select value={siteId} onChange={(e) => setSiteId(e.target.value)}>
@@ -64,7 +82,10 @@ export default function ReportsPage() {
           <option value="">All Contractors</option>
           {contractors.map((contractor) => <option key={contractor.id} value={contractor.id}>{contractor.name}</option>)}
         </Select>
-        <button onClick={downloadReport} className="rounded-lg bg-moonext-navy px-4 py-2 text-center text-sm font-medium text-white">
+        <button onClick={openLetterheadReport} className="inline-flex min-h-10 items-center justify-center rounded-lg bg-moonext-orange px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-orange-600 sm:min-h-11">
+          Letterhead Report
+        </button>
+        <button onClick={downloadReport} className="inline-flex min-h-10 items-center justify-center rounded-lg bg-moonext-navy px-4 py-2 text-center text-sm font-medium text-white transition hover:bg-blue-900 sm:min-h-11">
           Download CSV
         </button>
       </div>

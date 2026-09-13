@@ -4,6 +4,7 @@ import { hash } from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.labourTransaction.deleteMany();
   await prisma.wageRecord.deleteMany();
   await prisma.attendance.deleteMany();
   await prisma.labour.deleteMany();

@@ -44,8 +44,29 @@ export default function ContractorsPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    let cancelled = false;
+
+    async function loadInitialContractors() {
+      const res = await fetch("/api/contractors");
+      if (!res.ok) {
+        if (!cancelled) {
+          pushToast(await getError(res), "error");
+        }
+        return;
+      }
+
+      const data = await res.json() as Contractor[];
+      if (!cancelled) {
+        setContractors(data);
+      }
+    }
+
+    void loadInitialContractors();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pushToast]);
 
   async function createContractor() {
     const nextErrors = validateContractorForm(form);
@@ -111,8 +132,8 @@ export default function ContractorsPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Contractor Management</h2>
-      <div className="rounded-xl border bg-white p-4">
-        <div className="grid gap-3 md:grid-cols-3">
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <FormField label="Contractor Name" required error={errors.name}>
             <Input placeholder="Sharma Infra Services" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </FormField>
@@ -124,14 +145,15 @@ export default function ContractorsPage() {
           </FormField>
         </div>
         <div className="mt-3">
-          <Button onClick={createContractor} disabled={loadingAction === "create" || createInvalid}>
+          <Button onClick={createContractor} disabled={loadingAction === "create" || createInvalid} className="w-full sm:w-auto">
             {loadingAction === "create" ? "Adding..." : "Add Contractor"}
           </Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
-        <table className="min-w-full text-sm">
+      <div className="table-shell">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table className="table-base min-w-[720px]">
           <thead className="bg-slate-50 text-left">
             <tr>
               <th className="px-3 py-2">Name</th>
@@ -144,20 +166,21 @@ export default function ContractorsPage() {
           <tbody>
             {contractors.map((contractor) => (
               <tr key={contractor.id} className="border-t">
-                <td className="px-3 py-2">{contractor.name}</td>
-                <td className="px-3 py-2">{contractor.phone}</td>
-                <td className="px-3 py-2">{contractor.email || "-"}</td>
-                <td className="px-3 py-2">{contractor._count?.labours ?? 0}</td>
+                <td className="px-3 py-2 font-medium whitespace-nowrap">{contractor.name}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{contractor.phone}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{contractor.email || "-"}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{contractor._count?.labours ?? 0}</td>
                 <td className="px-3 py-2">
-                  <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => openEdit(contractor)}>Edit</Button>
-                    <Button variant="danger" onClick={() => setDeleteContractor(contractor)}>Delete</Button>
+                  <div className="action-stack min-w-[124px]">
+                    <Button variant="secondary" className="w-full sm:w-auto" onClick={() => openEdit(contractor)}>Edit</Button>
+                    <Button variant="danger" className="w-full sm:w-auto" onClick={() => setDeleteContractor(contractor)}>Delete</Button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       <Modal
@@ -167,7 +190,7 @@ export default function ContractorsPage() {
         footer={(
           <>
             <Button variant="secondary" onClick={() => setEditContractor(null)}>Cancel</Button>
-            <Button onClick={saveEdit} disabled={!editContractor || editInvalid || loadingAction === `edit:${editContractor?.id}`}>
+            <Button onClick={saveEdit} disabled={!editContractor || editInvalid || loadingAction === `edit:${editContractor?.id}`} className="w-full sm:w-auto">
               {editContractor && loadingAction === `edit:${editContractor.id}` ? "Saving..." : "Save"}
             </Button>
           </>

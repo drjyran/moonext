@@ -4,6 +4,8 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
+export type SearchParamValue = string | string[] | undefined;
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
@@ -18,4 +20,16 @@ export function formatDate(value: string | Date) {
     month: "short",
     day: "2-digit"
   }).format(new Date(value));
+}
+
+export function readSearchParam(value: SearchParamValue) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export function sanitizeRedirectPath(value: string | null | undefined, fallback = "/dashboard") {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return fallback;
+  }
+
+  return value;
 }

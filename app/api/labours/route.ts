@@ -3,13 +3,17 @@ import { Role } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRole, requireUser } from "@/lib/api";
+import { labourPaymentCycles } from "@/lib/labour-finance";
+import { labourBackupInclude, sendLabourBackupEmail } from "@/lib/labour-backup-email";
 
 const createSchema = z.object({
   fullName: z.string().min(2),
   phone: z.string().min(10),
   aadhaarNumber: z.string().length(12),
   skillType: z.string().min(2),
-  dailyWage: z.coerce.number().positive(),
+  paymentCycle: z.enum(labourPaymentCycles).default("DAILY"),
+  dailyWage: z.coerce.number().min(0),
+  monthlyWage: z.coerce.number().min(0).optional(),
   contractorId: z.string().min(1),
   assignedSiteId: z.string().min(1),
   status: z.enum(["ACTIVE", "INACTIVE"]).default("ACTIVE"),
@@ -39,7 +43,13 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" }
   });
 
-  return NextResponse.json(labours);
+  return NextResponse.json(
+    labours.map((labour) => ({
+      ...labour,
+      dailyWage: Number(labour.dailyWage),
+      monthlyWage: labour.monthlyWage ? Number(labour.monthlyWage) : null
+    }))
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -50,6 +60,14 @@ export async function POST(request: NextRequest) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
 
+  if (parsed.data.paymentCycle === "DAILY" && parsed.data.dailyWage <= 0) {
+    return NextResponse.json({ error: "Daily wage must be greater than 0" }, { status: 400 });
+  }
+
+  if (parsed.data.paymentCycle === "MONTHLY" && (!parsed.data.monthlyWage || parsed.data.monthlyWage <= 0)) {
+    return NextResponse.json({ error: "Monthly wage must be greater than 0" }, { status: 400 });
+  }
+
   if (isSiteScopedRole(auth.user.role) && auth.user.siteId !== parsed.data.assignedSiteId) {
     return NextResponse.json({ error: "Cannot assign outside your site" }, { status: 403 });
   }
@@ -57,8 +75,18 @@ export async function POST(request: NextRequest) {
   const labour = await prisma.labour.create({
     data: {
       ...parsed.data,
-      dailyWage: parsed.data.dailyWage
-    }
+      dailyWage: parsed.data.paymentCycle === "MONTHLY" ? 0 : parsed.data.dailyWage,
+      monthlyWage: parsed.data.paymentCycle === "MONTHLY" ? parsed.data.monthlyWage : null
+    },
+    include: labourBackupInclude
+  });
+
+  await sendLabourBackupEmail({
+    action: "created",
+    labour,
+    actor: auth.user
+  }).catch((error) => {
+    console.error("Labour backup email failed after create:", error);
   });
 
   return NextResponse.json(labour, { status: 201 });

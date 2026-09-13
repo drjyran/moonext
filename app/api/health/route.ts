@@ -1,5 +1,15 @@
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  return NextResponse.json({ status: "ok" });
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return NextResponse.json({ status: "ok", database: "ok" });
+  } catch (error) {
+    console.error("Health check failed:", error);
+    return NextResponse.json(
+      { status: "degraded", database: "unreachable" },
+      { status: 503 }
+    );
+  }
 }

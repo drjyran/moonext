@@ -1,32 +1,61 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import "./globals.css";
+import { SiteShell } from "@/components/public/site-shell";
+import { getCurrentUserFromCookie } from "@/lib/auth";
+import { companyInfo, siteBaseUrl } from "@/lib/company-content";
+import { getPublicWebsiteContent } from "@/lib/website-content-store";
 
 export const metadata: Metadata = {
-  title: "Moonext Labour Management System",
-  description: "Labour Management System for Moonext Constructions Pvt Ltd"
+  metadataBase: new URL(siteBaseUrl),
+  title: {
+    default: `${companyInfo.name} | Construction & Workforce Operations`,
+    template: `%s | ${companyInfo.shortName}`
+  },
+  description: companyInfo.description,
+  keywords: [
+    "Moonext Constructions Pvt Ltd",
+    "construction company",
+    "civil contractor",
+    "infrastructure company",
+    "labour management construction company",
+    "project execution services",
+    "construction services in Bihar"
+  ],
+  openGraph: {
+    title: companyInfo.name,
+    description: companyInfo.description,
+    url: siteBaseUrl,
+    siteName: companyInfo.name,
+    type: "website"
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: companyInfo.name,
+    description: companyInfo.description
+  }
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUserFromCookie();
+  const websiteContent = await getPublicWebsiteContent();
+
   return (
     <html lang="en">
-      <body className="bg-slate-100 text-slate-900">
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4">
-            <Link href="/" className="text-sm font-bold tracking-wide text-moonext-navy md:text-base">
-              Moonext Constructions Pvt Ltd
-            </Link>
-            <nav className="flex items-center gap-2">
-              <Link href="/login" className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100">
-                Login
-              </Link>
-              <Link href="/dashboard" className="rounded-md bg-moonext-orange px-3 py-2 text-sm font-medium text-white transition hover:bg-orange-600">
-                Dashboard
-              </Link>
-            </nav>
-          </div>
-        </header>
-        {children}
+      <body className="bg-white text-slate-900 antialiased">
+        <SiteShell
+          companyInfo={websiteContent.companyInfo}
+          services={websiteContent.services}
+          user={
+            user
+              ? {
+                  fullName: user.fullName,
+                  role: user.role
+                }
+              : null
+          }
+        >
+          {children}
+        </SiteShell>
       </body>
     </html>
   );

@@ -4,8 +4,128 @@
 
 :root {
   color-scheme: light;
+  --moonext-bg: #f8f5ef;
+  --moonext-surface: rgba(255, 255, 255, 0.84);
+  --moonext-border: rgba(15, 23, 42, 0.08);
+  --moonext-shadow: 0 24px 80px rgba(15, 23, 42, 0.08);
+  --moonext-shadow-strong: 0 28px 90px rgba(15, 23, 42, 0.14);
+  --moonext-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --moonext-body: "Avenir Next", "Segoe UI", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  @apply bg-slate-100 text-slate-900;
+  @apply overflow-x-hidden text-slate-900 antialiased;
+  background:
+    radial-gradient(circle at top left, rgba(251, 146, 60, 0.08), transparent 22%),
+    radial-gradient(circle at top right, rgba(15, 23, 42, 0.05), transparent 28%),
+    linear-gradient(180deg, #fcfbf8 0%, #ffffff 32%, #f7f4ee 100%);
+  font-family: var(--moonext-body);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.018) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.15), transparent 75%);
+  z-index: 0;
+}
+
+::selection {
+  background: rgba(249, 115, 22, 0.18);
+  color: #0f172a;
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  .site-shell-header,
+  .print-hidden {
+    display: none !important;
+  }
+
+  .print-page {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .print-sheet {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .print-sheet,
+  .print-sheet * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
+
+@layer components {
+  .public-container {
+    @apply mx-auto w-full max-w-7xl px-4 md:px-6;
+  }
+
+  .public-section {
+    @apply relative py-16 md:py-24;
+  }
+
+  .public-panel {
+    @apply relative overflow-hidden rounded-[30px] border p-6 sm:p-8;
+    border-color: var(--moonext-border);
+    background: var(--moonext-surface);
+    box-shadow: var(--moonext-shadow);
+    backdrop-filter: blur(14px);
+  }
+
+  .public-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(90deg, rgba(251, 146, 60, 0), rgba(251, 146, 60, 0.7), rgba(251, 146, 60, 0));
+    pointer-events: none;
+  }
+
+  .public-tag {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em];
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+
+  .surface-card {
+    @apply rounded-xl border bg-white;
+    border-color: rgba(15, 23, 42, 0.08);
+    box-shadow: 0 14px 40px rgba(15, 23, 42, 0.07);
+  }
+
+  .public-display {
+    font-family: var(--moonext-display);
+    letter-spacing: -0.035em;
+  }
+
+  .table-shell {
+    @apply -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0;
+  }
+
+  .table-base {
+    @apply min-w-full text-sm;
+  }
+
+  .action-stack {
+    @apply flex flex-col gap-2 sm:flex-row;
+  }
 }

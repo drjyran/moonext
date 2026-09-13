@@ -72,16 +72,17 @@ export default function AttendancePage() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Daily Attendance & Work Log</h2>
-      <div className="grid gap-2 rounded-xl border bg-white p-4 md:grid-cols-3">
+      <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 xl:grid-cols-3">
         <Select value={siteId} onChange={(e) => setSiteId(e.target.value)}>
           {sites.map((site) => <option key={site.id} value={site.id}>{site.name}</option>)}
         </Select>
         <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <Button onClick={saveAttendance} disabled={saving}>{saving ? "Saving..." : "Save Attendance"}</Button>
+        <Button onClick={saveAttendance} disabled={saving} className="w-full xl:w-auto">{saving ? "Saving..." : "Save Attendance"}</Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
-        <table className="min-w-full text-sm">
+      <div className="table-shell">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        <table className="table-base min-w-[860px]">
           <thead className="bg-slate-50 text-left">
             <tr>
               <th className="px-3 py-2">Worker</th>
@@ -95,9 +96,10 @@ export default function AttendancePage() {
               const shift = shiftMap[labour.id] || "FULL_TIME";
               return (
                 <tr key={labour.id} className="border-t">
-                  <td className="px-3 py-2">{labour.fullName}</td>
+                  <td className="px-3 py-2 font-medium whitespace-nowrap">{labour.fullName}</td>
                   <td className="px-3 py-2">
                     <Select
+                      className="min-w-[180px]"
                       value={shift}
                       onChange={(e) => setShiftMap((prev) => ({ ...prev, [labour.id]: e.target.value as ShiftType }))}
                     >
@@ -109,6 +111,7 @@ export default function AttendancePage() {
                   </td>
                   <td className="px-3 py-2">
                     <Input
+                      className="min-w-[120px]"
                       type="number"
                       min={0}
                       max={24}
@@ -119,6 +122,7 @@ export default function AttendancePage() {
                   </td>
                   <td className="px-3 py-2">
                     <Input
+                      className="min-w-[260px]"
                       placeholder="e.g. brickwork, wiring, plastering..."
                       value={descriptionMap[labour.id] || ""}
                       onChange={(e) => setDescriptionMap((prev) => ({ ...prev, [labour.id]: e.target.value }))}
@@ -129,6 +133,7 @@ export default function AttendancePage() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

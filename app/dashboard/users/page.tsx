@@ -74,8 +74,48 @@ export default function UsersPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    let cancelled = false;
+
+    async function loadInitialUsers() {
+      const [u, s, c] = await Promise.all([fetch("/api/users"), fetch("/api/sites"), fetch("/api/contractors")]);
+      if (!u.ok) {
+        if (!cancelled) {
+          pushToast(await getError(u), "error");
+        }
+        return;
+      }
+      if (!s.ok) {
+        if (!cancelled) {
+          pushToast(await getError(s), "error");
+        }
+        return;
+      }
+      if (!c.ok) {
+        if (!cancelled) {
+          pushToast(await getError(c), "error");
+        }
+        return;
+      }
+
+      const [usersData, sitesData, contractorsData] = await Promise.all([
+        u.json() as Promise<User[]>,
+        s.json() as Promise<Site[]>,
+        c.json() as Promise<Contractor[]>
+      ]);
+
+      if (!cancelled) {
+        setUsers(usersData);
+        setSites(sitesData);
+        setContractors(contractorsData);
+      }
+    }
+
+    void loadInitialUsers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pushToast]);
 
   async function createUser() {
     const nextErrors = validateCreate(form);
@@ -145,8 +185,8 @@ export default function UsersPage() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">User & Role Management (Admin)</h2>
 
-      <div className="rounded-xl border bg-white p-4">
-        <div className="grid gap-3 md:grid-cols-3">
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <FormField label="Full Name" required error={errors.fullName}>
             <Input placeholder="Rajesh Yadav" value={form.fullName} onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
           </FormField>
@@ -180,14 +220,15 @@ export default function UsersPage() {
           </FormField>
         </div>
         <div className="mt-3">
-          <Button onClick={createUser} disabled={loadingAction === "create" || createInvalid}>
+          <Button onClick={createUser} disabled={loadingAction === "create" || createInvalid} className="w-full sm:w-auto">
             {loadingAction === "create" ? "Creating..." : "Create User"}
           </Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
-        <table className="min-w-full text-sm">
+      <div className="table-shell">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table className="table-base min-w-[720px]">
           <thead className="bg-slate-50 text-left">
             <tr>
               <th className="px-3 py-2">Name</th>
@@ -199,19 +240,20 @@ export default function UsersPage() {
           <tbody>
             {users.map((user) => (
               <tr key={user.id} className="border-t">
-                <td className="px-3 py-2">{user.fullName}</td>
-                <td className="px-3 py-2">{user.email}</td>
-                <td className="px-3 py-2">{user.role}</td>
+                <td className="px-3 py-2 font-medium whitespace-nowrap">{user.fullName}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{user.email}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{user.role}</td>
                 <td className="px-3 py-2">
-                  <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => openEdit(user)}>Edit Role</Button>
-                    <Button variant="danger" onClick={() => setDeleteUser(user)}>Delete</Button>
+                  <div className="action-stack min-w-[132px]">
+                    <Button variant="secondary" className="w-full sm:w-auto" onClick={() => openEdit(user)}>Edit Role</Button>
+                    <Button variant="danger" className="w-full sm:w-auto" onClick={() => setDeleteUser(user)}>Delete</Button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       <Modal
@@ -221,7 +263,7 @@ export default function UsersPage() {
         footer={(
           <>
             <Button variant="secondary" onClick={() => setEditUser(null)}>Cancel</Button>
-            <Button onClick={saveRole} disabled={!editUser || loadingAction === `edit:${editUser?.id}`}>
+            <Button onClick={saveRole} disabled={!editUser || loadingAction === `edit:${editUser?.id}`} className="w-full sm:w-auto">
               {editUser && loadingAction === `edit:${editUser.id}` ? "Saving..." : "Save"}
             </Button>
           </>

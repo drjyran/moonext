@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Role, type User } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { getCurrentUserFromRequest, hasRole } from "@/lib/auth";
 
 export async function requireUser(request: NextRequest) {
@@ -7,7 +7,7 @@ export async function requireUser(request: NextRequest) {
   if (!user) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
-  return { user } as { user: User };
+  return { user };
 }
 
 export async function requireRole(request: NextRequest, roles: Role[]) {

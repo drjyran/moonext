@@ -3,6 +3,7 @@ import { Role } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireRole, requireUser } from "@/lib/api";
+import { getPeriodTransactionMap, getWageSettlement } from "@/lib/labour-settlement";
 
 const schema = z.object({
   month: z.coerce.number().min(1).max(12),
@@ -29,14 +30,36 @@ export async function GET(request: NextRequest) {
       ...(result.user.role === Role.CONTRACTOR ? { contractorId: result.user.contractorId ?? "" } : {})
     },
     include: {
-      labour: { select: { fullName: true, phone: true } },
+      labour: { select: { fullName: true, phone: true, paymentCycle: true, monthlyWage: true } },
       contractor: { select: { name: true } },
       site: { select: { name: true } }
     },
     orderBy: { createdAt: "desc" }
   });
 
-  return NextResponse.json(wages);
+  const transactionMap = await getPeriodTransactionMap(
+    wages.map((wage) => wage.labourId),
+    month,
+    year
+  );
+
+  return NextResponse.json(
+    wages.map((wage) => {
+      const settlement = getWageSettlement(
+        Number(wage.grossAmount),
+        Number(wage.paidAmount),
+        transactionMap.get(wage.labourId) || []
+      );
+
+      return {
+        ...wage,
+        grossAmount: Number(wage.grossAmount),
+        paidAmount: Number(wage.paidAmount),
+        pendingAmount: settlement.pendingAmount,
+        settlement
+      };
+    })
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -56,6 +79,24 @@ export async function POST(request: NextRequest) {
   };
 
   const labours = await prisma.labour.findMany({ where: labourWhere });
+  const existingWages = await prisma.wageRecord.findMany({
+    where: {
+      labourId: { in: labours.map((labour) => labour.id) },
+      month,
+      year
+    },
+    select: {
+      id: true,
+      labourId: true,
+      paidAmount: true
+    }
+  });
+  const existingWageMap = new Map(existingWages.map((wage) => [wage.labourId, Number(wage.paidAmount)]));
+  const transactionMap = await getPeriodTransactionMap(
+    labours.map((labour) => labour.id),
+    month,
+    year
+  );
 
   for (const labour of labours) {
     const attendance = await prisma.attendance.findMany({
@@ -80,10 +121,18 @@ export async function POST(request: NextRequest) {
     const halfDayWage = labour.halfDayWage ? Number(labour.halfDayWage) : dailyWage / 2;
     const overtimeHourly = labour.overtimeWage ? Number(labour.overtimeWage) : (dailyWage / 8) * 1.5;
 
-    const fullTimePay = fullTimeDays * dailyWage;
-    const halfTimePay = halfTimeDays * halfDayWage;
-    const overtimePay = overtimeHours * overtimeHourly;
-    const grossAmount = fullTimePay + halfTimePay + overtimePay;
+    const fullTimePay =
+      labour.paymentCycle === "MONTHLY" ? Number(labour.monthlyWage || 0) : fullTimeDays * dailyWage;
+    const halfTimePay = labour.paymentCycle === "MONTHLY" ? 0 : halfTimeDays * halfDayWage;
+    const overtimePay = labour.paymentCycle === "MONTHLY" ? 0 : overtimeHours * overtimeHourly;
+    const grossAmount =
+      labour.paymentCycle === "MONTHLY" ? Number(labour.monthlyWage || 0) : fullTimePay + halfTimePay + overtimePay;
+    const existingPaidAmount = existingWageMap.get(labour.id) || 0;
+    const settlement = getWageSettlement(
+      grossAmount,
+      existingPaidAmount,
+      transactionMap.get(labour.id) || []
+    );
 
     await prisma.wageRecord.upsert({
       where: {
@@ -107,7 +156,9 @@ export async function POST(request: NextRequest) {
         halfTimePay,
         overtimePay,
         grossAmount,
-        pendingAmount: grossAmount
+        paidAmount: existingPaidAmount,
+        pendingAmount: settlement.pendingAmount,
+        paymentStatus: settlement.pendingAmount === 0 ? "PAID" : "PENDING"
       },
       update: {
         presentDays,
@@ -118,7 +169,9 @@ export async function POST(request: NextRequest) {
         halfTimePay,
         overtimePay,
         grossAmount,
-        pendingAmount: grossAmount
+        paidAmount: existingPaidAmount,
+        pendingAmount: settlement.pendingAmount,
+        paymentStatus: settlement.pendingAmount === 0 ? "PAID" : "PENDING"
       }
     });
   }

@@ -90,4 +90,3 @@ npx prisma migrate deploy
 - `lib/*`: auth, prisma, API guards, utils
 - `prisma/schema.prisma`: database models
 - `prisma/seed.ts`: sample seed data
-# moonext

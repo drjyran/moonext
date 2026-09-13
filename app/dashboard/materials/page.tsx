@@ -47,8 +47,40 @@ export default function MaterialsPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    let cancelled = false;
+
+    async function loadInitialMaterials() {
+      const [materialsRes, sitesRes] = await Promise.all([fetch("/api/materials"), fetch("/api/sites")]);
+      if (!materialsRes.ok) {
+        if (!cancelled) {
+          pushToast(await getError(materialsRes), "error");
+        }
+        return;
+      }
+      if (!sitesRes.ok) {
+        if (!cancelled) {
+          pushToast(await getError(sitesRes), "error");
+        }
+        return;
+      }
+
+      const [materials, sitesData] = await Promise.all([
+        materialsRes.json() as Promise<Material[]>,
+        sitesRes.json() as Promise<Site[]>
+      ]);
+
+      if (!cancelled) {
+        setRows(materials);
+        setSites(sitesData);
+      }
+    }
+
+    void loadInitialMaterials();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pushToast]);
 
   async function createMaterial() {
     if (!form.name || !form.quantity || !form.siteId) {
@@ -82,8 +114,8 @@ export default function MaterialsPage() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Material Management</h2>
 
-      <div className="rounded-xl border bg-white p-4">
-        <div className="grid gap-3 md:grid-cols-3">
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <FormField label="Material Name" required>
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Cement" />
           </FormField>
@@ -114,12 +146,13 @@ export default function MaterialsPage() {
           </FormField>
         </div>
         <div className="mt-3">
-          <Button onClick={createMaterial} disabled={loading}>{loading ? "Saving..." : "Add Material"}</Button>
+          <Button onClick={createMaterial} disabled={loading} className="w-full sm:w-auto">{loading ? "Saving..." : "Add Material"}</Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
-        <table className="min-w-full text-sm">
+      <div className="table-shell">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table className="table-base min-w-[820px]">
           <thead className="bg-slate-50 text-left">
             <tr>
               <th className="px-3 py-2">Material</th>
@@ -133,16 +166,17 @@ export default function MaterialsPage() {
           <tbody>
             {rows.map((row) => (
               <tr key={row.id} className="border-t">
-                <td className="px-3 py-2">{row.name}</td>
-                <td className="px-3 py-2">{row.site?.name || "-"}</td>
-                <td className="px-3 py-2">{Number(row.quantity)} {row.unit}</td>
-                <td className="px-3 py-2">{Number(row.consumedQty)} {row.unit}</td>
-                <td className="px-3 py-2">{row.supplier || "-"}</td>
-                <td className="px-3 py-2">{new Date(row.purchaseDate).toLocaleDateString()}</td>
+                <td className="px-3 py-2 font-medium whitespace-nowrap">{row.name}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{row.site?.name || "-"}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{Number(row.quantity)} {row.unit}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{Number(row.consumedQty)} {row.unit}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{row.supplier || "-"}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{new Date(row.purchaseDate).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
     </div>
   );

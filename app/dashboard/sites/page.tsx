@@ -59,8 +59,29 @@ export default function SitesPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    let cancelled = false;
+
+    async function loadInitialSites() {
+      const res = await fetch("/api/sites");
+      if (!res.ok) {
+        if (!cancelled) {
+          pushToast(await getError(res), "error");
+        }
+        return;
+      }
+
+      const data = await res.json() as Site[];
+      if (!cancelled) {
+        setSites(data);
+      }
+    }
+
+    void loadInitialSites();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pushToast]);
 
   async function createSite() {
     const nextErrors = validateSiteForm(form);
@@ -146,8 +167,8 @@ export default function SitesPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Multi-Site Management</h2>
-      <div className="rounded-xl border bg-white p-4">
-        <div className="grid gap-3 md:grid-cols-3">
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <FormField label="Site Name" required error={errors.name}>
             <Input placeholder="Moonext Skyline Residency" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </FormField>
@@ -165,14 +186,15 @@ export default function SitesPage() {
           </FormField>
         </div>
         <div className="mt-3">
-          <Button onClick={createSite} disabled={loadingAction === "create" || createInvalid}>
+          <Button onClick={createSite} disabled={loadingAction === "create" || createInvalid} className="w-full sm:w-auto">
             {loadingAction === "create" ? "Adding..." : "Add Site"}
           </Button>
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border bg-white">
-        <table className="min-w-full text-sm">
+      <div className="table-shell">
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table className="table-base min-w-[760px]">
           <thead className="bg-slate-50 text-left">
             <tr>
               <th className="px-3 py-2">Name</th>
@@ -186,24 +208,25 @@ export default function SitesPage() {
           <tbody>
             {sites.map((site) => (
               <tr key={site.id} className="border-t">
-                <td className="px-3 py-2">{site.name}</td>
-                <td className="px-3 py-2">{site.city}, {site.state}</td>
-                <td className="px-3 py-2">{formatDate(site.projectStart)}</td>
-                <td className="px-3 py-2">{formatDate(site.projectEnd)}</td>
-                <td className="px-3 py-2">{site.isActive ? "Active" : "Inactive"}</td>
+                <td className="px-3 py-2 font-medium whitespace-nowrap">{site.name}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{site.city}, {site.state}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{formatDate(site.projectStart)}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{formatDate(site.projectEnd)}</td>
+                <td className="px-3 py-2 whitespace-nowrap">{site.isActive ? "Active" : "Inactive"}</td>
                 <td className="px-3 py-2">
-                  <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => openEdit(site)}>Edit</Button>
-                    <Button variant="secondary" onClick={() => toggleSite(site)} disabled={loadingAction === `toggle:${site.id}`}>
+                  <div className="action-stack min-w-[132px]">
+                    <Button variant="secondary" className="w-full sm:w-auto" onClick={() => openEdit(site)}>Edit</Button>
+                    <Button variant="secondary" className="w-full sm:w-auto" onClick={() => toggleSite(site)} disabled={loadingAction === `toggle:${site.id}`}>
                       {loadingAction === `toggle:${site.id}` ? "Saving..." : site.isActive ? "Deactivate" : "Activate"}
                     </Button>
-                    <Button variant="danger" onClick={() => setDeleteSite(site)}>Delete</Button>
+                    <Button variant="danger" className="w-full sm:w-auto" onClick={() => setDeleteSite(site)}>Delete</Button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
 
       <Modal
@@ -213,13 +236,13 @@ export default function SitesPage() {
         footer={(
           <>
             <Button variant="secondary" onClick={() => setEditSite(null)}>Cancel</Button>
-            <Button onClick={saveEdit} disabled={!editSite || editInvalid || loadingAction === `edit:${editSite?.id}`}>
+            <Button onClick={saveEdit} disabled={!editSite || editInvalid || loadingAction === `edit:${editSite?.id}`} className="w-full sm:w-auto">
               {editSite && loadingAction === `edit:${editSite.id}` ? "Saving..." : "Save"}
             </Button>
           </>
         )}
       >
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           <FormField label="Site Name" required error={editErrors.name}>
             <Input placeholder="Site name" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
           </FormField>

@@ -7,3 +7,11 @@ prisma/dev.db
 prisma/dev.db-journal
 .vercel
 .env*.local
+.DS_Store
+tsconfig.tsbuildinfo
+*.log
+uploads/*
+!uploads/.gitkeep
+public/uploads/*
+!public/uploads/.gitkeep
+
